@@ -1,0 +1,15 @@
+{
+  "name": "fosse-humanitz-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bot Discord dedie au serveur HumanitZ.",
+  "scripts": {
+    "start": "node src/index.js",
+    "rcon:check": "node src/scripts/rcon-check.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2"
+  }
+}
