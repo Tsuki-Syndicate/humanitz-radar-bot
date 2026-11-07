@@ -21,7 +21,7 @@ function helpEmbed() {
     .setDescription("Relais d'alerte et de defense des rescapes.")
     .addFields(
       { name: "Public", value: "`/status` - etat du serveur\n`/joueurs` - survivants connectes\n`/alertes` - active ou retire les alertes", inline: false },
-      { name: "Staff", value: "`/hz statut` `annonce` `redemarrer` `annuler` `meteo` `saison` `joueur`", inline: false }
+      { name: "Staff", value: "`/hz statut` `annonce` `redemarrer` `redemarrage-rapide` `annuler` `bannis` `meteo` `saison` `joueur` `objet` `sac` `vehicule` `ia`", inline: false }
     )
     .setFooter({ text: "Les commandes staff sont reservees au proprietaire et au role configure." });
 }
@@ -38,6 +38,23 @@ function playersEmbed(snapshot) {
 
 function safeIdentifier(value) {
   return /^[a-zA-Z0-9_-]{3,64}$/.test(value);
+}
+
+function safeResourceCode(value) {
+  return /^[a-zA-Z0-9_.-]{1,64}$/.test(value);
+}
+
+function bansEmbed(output) {
+  const bans = output.trim();
+  const content = bans && !/^empty!?$/i.test(bans)
+    ? bans.replace(/`/g, "").slice(0, 3_800)
+    : "Aucun joueur banni par RCON.";
+
+  return new EmbedBuilder()
+    .setColor(0xf9a825)
+    .setTitle("R.A.D.A.R. | Liste des bannis")
+    .setDescription(content)
+    .setTimestamp();
 }
 
 export function createInteractionHandler({ client, service, monitor }) {
@@ -121,12 +138,39 @@ export function createInteractionHandler({ client, service, monitor }) {
       if (subcommand === "redemarrer") {
         const minutes = interaction.options.getInteger("minutes", true);
         await service.restart(minutes);
+        const message = `Redemarrage du serveur dans ${minutes} minute(s). Mettez-vous en securite.`;
+        await service.announce(message);
+        await sendAnnouncement(client, message);
         confirmation = `Redemarrage programme dans ${minutes} minute(s).`;
+      }
+
+      if (subcommand === "redemarrage-rapide") {
+        await service.quickRestart();
+        const message = "Redemarrage rapide du serveur dans une minute. Mettez-vous en securite.";
+        await service.announce(message);
+        await sendAnnouncement(client, message);
+        confirmation = "Redemarrage rapide programme dans une minute.";
       }
 
       if (subcommand === "annuler") {
         await service.cancelRestart();
+        const message = "Le redemarrage programme est annule.";
+        await service.announce(message);
+        await sendAnnouncement(client, message);
         confirmation = "Redemarrage programme annule.";
+      }
+
+      if (subcommand === "bannis") {
+        const bans = await service.listBans();
+        confirmation = "Liste RCON des bannis consultee.";
+        await interaction.editReply({ embeds: [bansEmbed(bans)] });
+        await sendLog(
+          client,
+          "R.A.D.A.R. | Action staff",
+          `**${interaction.user.tag}**: ${confirmation}`,
+          0x5bce77
+        );
+        return;
       }
 
       if (subcommand === "meteo") {
@@ -147,6 +191,41 @@ export function createInteractionHandler({ client, service, monitor }) {
         if (!safeIdentifier(identifier)) throw new Error("Identifiant joueur invalide.");
         await service.playerAction(action, identifier);
         confirmation = `Action ${action} transmise pour ${identifier}.`;
+      }
+
+      if (subcommand === "objet") {
+        const identifier = interaction.options.getString("identifiant", true);
+        const code = interaction.options.getString("code", true);
+        const quantity = interaction.options.getInteger("quantite", true);
+        if (!safeIdentifier(identifier) || !safeResourceCode(code)) throw new Error("Identifiant ou code invalide.");
+        await service.spawnItem(identifier, code, quantity);
+        confirmation = `Objet ${code} x${quantity} envoye pres de ${identifier}.`;
+      }
+
+      if (subcommand === "sac") {
+        const identifier = interaction.options.getString("identifiant", true);
+        const code = interaction.options.getString("code", true);
+        if (!safeIdentifier(identifier) || !safeResourceCode(code)) throw new Error("Identifiant ou code invalide.");
+        await service.spawnBackpack(identifier, code);
+        confirmation = `Sac ${code} envoye pres de ${identifier}.`;
+      }
+
+      if (subcommand === "vehicule") {
+        const identifier = interaction.options.getString("identifiant", true);
+        const code = interaction.options.getString("code", true);
+        if (!safeIdentifier(identifier) || !safeResourceCode(code)) throw new Error("Identifiant ou code invalide.");
+        await service.spawnVehicle(identifier, code);
+        confirmation = `Vehicule ${code} envoye pres de ${identifier}.`;
+      }
+
+      if (subcommand === "ia") {
+        const identifier = interaction.options.getString("identifiant", true);
+        const type = interaction.options.getString("type", true);
+        const quantity = interaction.options.getInteger("quantite", true);
+        const distance = interaction.options.getInteger("distance", true);
+        if (!safeIdentifier(identifier) || !safeResourceCode(type)) throw new Error("Identifiant ou code invalide.");
+        await service.spawnAi(identifier, type, quantity, distance);
+        confirmation = `${quantity} IA ${type} envoyee(s) a ${distance} m de ${identifier}.`;
       }
 
       await interaction.editReply({ embeds: [actionEmbed("R.A.D.A.R. | Ordre execute", confirmation)] });

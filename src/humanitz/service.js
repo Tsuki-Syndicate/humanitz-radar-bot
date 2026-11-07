@@ -5,12 +5,18 @@ function valueAfter(lines, expression) {
   return lines.map((line) => line.match(expression)).find(Boolean)?.[1]?.trim() || null;
 }
 
+function playerName(line) {
+  // RCON returns extra private data after the player name (Steam ID, level and clan).
+  return line.match(/^(.+?)\s*\(/)?.[1]?.trim() || line;
+}
+
 export function parseServerInfo(info, playersOutput) {
   const lines = info.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const players = playersOutput
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line && !/^no players connected$/i.test(line));
+    .filter((line) => line && !/^no players connected$/i.test(line))
+    .map(playerName);
 
   return {
     raw: info,
@@ -74,8 +80,16 @@ export class HumanitZService {
     return this.execute(`restart ${minutes}`);
   }
 
+  quickRestart() {
+    return this.execute("QuickRestart");
+  }
+
   cancelRestart() {
     return this.execute("CancelRestart");
+  }
+
+  listBans() {
+    return this.execute("fetchbanned");
   }
 
   setWeather(weather) {
@@ -96,5 +110,21 @@ export class HumanitZService {
     };
     if (!commands[action]) throw new Error("Action joueur invalide.");
     return this.execute(commands[action]);
+  }
+
+  spawnItem(netId, itemId, quantity) {
+    return this.execute(`spawnitem ${netId} ${itemId} ${quantity}`);
+  }
+
+  spawnBackpack(netId, backpackId) {
+    return this.execute(`spawnbackpack ${netId} ${backpackId}`);
+  }
+
+  spawnVehicle(netId, vehicleId) {
+    return this.execute(`spawncar ${netId} ${vehicleId}`);
+  }
+
+  spawnAi(netId, aiType, quantity, distance) {
+    return this.execute(`spawnai ${netId} ${aiType} ${quantity} ${distance}`);
   }
 }

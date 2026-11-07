@@ -51,8 +51,14 @@ const commands = [
         .setMinValue(1)
         .setMaxValue(120)))
     .addSubcommand((subcommand) => subcommand
+      .setName("redemarrage-rapide")
+      .setDescription("Programme un redemarrage rapide dans une minute."))
+    .addSubcommand((subcommand) => subcommand
       .setName("annuler")
       .setDescription("Annule le redemarrage programme."))
+    .addSubcommand((subcommand) => subcommand
+      .setName("bannis")
+      .setDescription("Affiche la liste RCON des joueurs bannis."))
     .addSubcommand((subcommand) => subcommand
       .setName("meteo")
       .setDescription("Change la meteo du serveur.")
@@ -94,6 +100,84 @@ const commands = [
         .setRequired(true)
         .setMinLength(3)
         .setMaxLength(64)))
+    .addSubcommand((subcommand) => subcommand
+      .setName("objet")
+      .setDescription("Fait apparaitre un objet pres d'un survivant.")
+      .addStringOption((option) => option
+        .setName("identifiant")
+        .setDescription("Identifiant HumanitZ/Steam du survivant.")
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(64))
+      .addStringOption((option) => option
+        .setName("code")
+        .setDescription("Code de l'objet HumanitZ.")
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(64))
+      .addIntegerOption((option) => option
+        .setName("quantite")
+        .setDescription("Quantite a faire apparaitre.")
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(99)))
+    .addSubcommand((subcommand) => subcommand
+      .setName("sac")
+      .setDescription("Fait apparaitre un sac pres d'un survivant.")
+      .addStringOption((option) => option
+        .setName("identifiant")
+        .setDescription("Identifiant HumanitZ/Steam du survivant.")
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(64))
+      .addStringOption((option) => option
+        .setName("code")
+        .setDescription("Code du sac HumanitZ.")
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(64)))
+    .addSubcommand((subcommand) => subcommand
+      .setName("vehicule")
+      .setDescription("Fait apparaitre un vehicule pres d'un survivant.")
+      .addStringOption((option) => option
+        .setName("identifiant")
+        .setDescription("Identifiant HumanitZ/Steam du survivant.")
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(64))
+      .addStringOption((option) => option
+        .setName("code")
+        .setDescription("Code du vehicule HumanitZ.")
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(64)))
+    .addSubcommand((subcommand) => subcommand
+      .setName("ia")
+      .setDescription("Fait apparaitre une IA pres d'un survivant.")
+      .addStringOption((option) => option
+        .setName("identifiant")
+        .setDescription("Identifiant HumanitZ/Steam du survivant.")
+        .setRequired(true)
+        .setMinLength(3)
+        .setMaxLength(64))
+      .addStringOption((option) => option
+        .setName("type")
+        .setDescription("Code du type d'IA HumanitZ.")
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(64))
+      .addIntegerOption((option) => option
+        .setName("quantite")
+        .setDescription("Nombre d'IA a faire apparaitre.")
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(20))
+      .addIntegerOption((option) => option
+        .setName("distance")
+        .setDescription("Distance d'apparition en metres.")
+        .setRequired(true)
+        .setMinValue(5)
+        .setMaxValue(150)))
 ].map((command) => command.toJSON());
 
 export async function deployCommands(applicationId) {
