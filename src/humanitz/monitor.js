@@ -7,7 +7,7 @@ export class HumanitZMonitor {
     this.client = client;
     this.service = service;
     this.interval = null;
-    this.statusMessageId = null;
+    this.statusMessageIds = new Map();
     this.lastOnline = null;
     this.lastPlayers = new Set();
     this.running = false;
@@ -48,13 +48,25 @@ export class HumanitZMonitor {
   }
 
   async publishStatus(embed) {
-    if (!config.humanitz.statusChannelId) return;
+    const channelIds = config.humanitz.statusChannelIds;
+    if (!channelIds.length) return;
 
-    const channel = await this.client.channels.fetch(config.humanitz.statusChannelId).catch(() => null);
+    const results = await Promise.allSettled(
+      channelIds.map((channelId) => this.publishStatusToChannel(channelId, embed))
+    );
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.warn(`Publication du statut HumanitZ impossible: ${result.reason.message}`);
+      }
+    }
+  }
+
+  async publishStatusToChannel(channelId, embed) {
+    const channel = await this.client.channels.fetch(channelId).catch(() => null);
     if (!channel?.isTextBased()) return;
 
-    let message = this.statusMessageId
-      ? await channel.messages.fetch(this.statusMessageId).catch(() => null)
+    let message = this.statusMessageIds.get(channelId)
+      ? await channel.messages.fetch(this.statusMessageIds.get(channelId)).catch(() => null)
       : null;
 
     if (!message) {
@@ -66,13 +78,13 @@ export class HumanitZMonitor {
     }
 
     if (message) {
-      this.statusMessageId = message.id;
+      this.statusMessageIds.set(channelId, message.id);
       await message.edit({ embeds: [embed] });
       return;
     }
 
     const created = await channel.send({ embeds: [embed] });
-    this.statusMessageId = created.id;
+    this.statusMessageIds.set(channelId, created.id);
   }
 
   async logChanges(snapshot) {

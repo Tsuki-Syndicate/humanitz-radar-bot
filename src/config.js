@@ -6,6 +6,15 @@ function required(name) {
   return value;
 }
 
+function identifiers(value) {
+  return [...new Set(
+    (value || "")
+      .split(",")
+      .map((identifier) => identifier.trim())
+      .filter(Boolean)
+  )];
+}
+
 export const config = {
   discord: {
     token: required("DISCORD_TOKEN"),
@@ -16,6 +25,12 @@ export const config = {
     rconPort: Number(process.env.HUMANITZ_RCON_PORT) || null,
     rconPassword: process.env.HUMANITZ_RCON_PASSWORD?.trim() || null,
     statusChannelId: process.env.HUMANITZ_STATUS_CHANNEL_ID?.trim() || null,
+    statusMirrorChannelIds: identifiers(process.env.HUMANITZ_STATUS_MIRROR_CHANNEL_IDS),
+    connectionChannelIds: identifiers(process.env.HUMANITZ_CONNECTION_CHANNEL_IDS),
+    communityLinkChannelIds: identifiers(process.env.HUMANITZ_COMMUNITY_LINK_CHANNEL_IDS),
+    publicServerAddress: process.env.HUMANITZ_PUBLIC_SERVER_ADDRESS?.trim() || null,
+    publicServerPassword: process.env.HUMANITZ_PUBLIC_SERVER_PASSWORD?.trim() || null,
+    communityInviteUrl: process.env.HUMANITZ_COMMUNITY_INVITE_URL?.trim() || null,
     logsChannelId: process.env.HUMANITZ_LOGS_CHANNEL_ID?.trim() || null,
     announcementsChannelId: process.env.HUMANITZ_ANNOUNCEMENTS_CHANNEL_ID?.trim() || null,
     commandsChannelId: process.env.HUMANITZ_COMMANDS_CHANNEL_ID?.trim() || null,
@@ -29,6 +44,9 @@ export const config = {
     ),
     get rconConfigured() {
       return Boolean(this.rconHost && this.rconPort && this.rconPassword);
+    },
+    get statusChannelIds() {
+      return [...new Set([this.statusChannelId, ...this.statusMirrorChannelIds].filter(Boolean))];
     }
   }
 };
