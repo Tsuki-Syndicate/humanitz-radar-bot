@@ -106,10 +106,10 @@ function worldMenus() {
   return [weather, season];
 }
 
-function confirmRestartRow() {
+function confirmRestartRow(minutes) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`${PREFIX}confirm_restart`)
+      .setCustomId(`${PREFIX}confirm_restart:${minutes}`)
       .setLabel("Confirmer le redemarrage")
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
@@ -117,6 +117,15 @@ function confirmRestartRow() {
       .setLabel("Retour")
       .setStyle(ButtonStyle.Secondary)
   );
+}
+
+function restartModal() {
+  return modal(`${PREFIX}restart_modal`, "Planifier un redemarrage", [
+    input("minutes", "Delai en minutes (1 a 120)", {
+      placeholder: "15",
+      maxLength: 3
+    })
+  ]);
 }
 
 function assistanceModal(type) {
@@ -239,24 +248,22 @@ async function handleButton(interaction, context) {
     return;
   }
   if (action === "restart") {
-    await interaction.reply({
-      content: "Le redemarrage rapide sera lance dans une minute. Confirmer ?",
-      components: [confirmRestartRow()],
-      ephemeral: true
-    });
+    await interaction.showModal(restartModal());
     return;
   }
   if (action === "cancel_confirmation") {
     await interaction.update({ content: "Action annulee.", components: [] });
     return;
   }
-  if (action === "confirm_restart") {
+  if (action.startsWith("confirm_restart:")) {
+    const minutes = numberInRange(action.slice("confirm_restart:".length), 1, 120);
+    if (!minutes) throw new Error("Delai de redemarrage invalide.");
     await interaction.deferUpdate();
-    await service.quickRestart();
-    const message = "Redemarrage rapide du serveur dans une minute. Mettez-vous en securite.";
+    await service.restart(minutes);
+    const message = `Redemarrage du serveur dans ${minutes} minute(s). Mettez-vous en securite.`;
     await announceRestart(client, service, message);
-    await interaction.editReply({ content: "Redemarrage rapide programme dans une minute.", components: [] });
-    await logAction(client, interaction.user, "Redemarrage rapide programme dans une minute.");
+    await interaction.editReply({ content: `Redemarrage programme dans ${minutes} minute(s).`, components: [] });
+    await logAction(client, interaction.user, `Redemarrage programme dans ${minutes} minute(s).`);
     return;
   }
 
@@ -322,6 +329,16 @@ async function handleModal(interaction, context) {
     await sendAnnouncement(client, message);
     await interaction.editReply("Annonce envoyee dans le jeu et Discord.");
     await logAction(client, interaction.user, "Annonce envoyee dans le jeu et Discord.");
+    return;
+  }
+
+  if (action === "restart_modal") {
+    const minutes = numberInRange(interaction.fields.getTextInputValue("minutes").trim(), 1, 120);
+    if (!minutes) throw new Error("Entre un delai entre 1 et 120 minutes.");
+    await interaction.editReply({
+      content: `Programmer un redemarrage dans ${minutes} minute(s) ?`,
+      components: [confirmRestartRow(minutes)]
+    });
     return;
   }
 

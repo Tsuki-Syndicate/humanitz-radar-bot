@@ -39,7 +39,7 @@ export function controlPanelPayload() {
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId("radar_control:restart")
-      .setLabel("Redemarrer 1 min")
+      .setLabel("Planifier redemarrage")
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
       .setCustomId("radar_control:cancel_restart")
