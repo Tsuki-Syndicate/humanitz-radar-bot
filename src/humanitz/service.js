@@ -7,7 +7,7 @@ function valueAfter(lines, expression) {
 
 function playerName(line) {
   // RCON returns extra private data after the player name (Steam ID, level and clan).
-  return line.match(/^(.+?)\s*\(/)?.[1]?.trim() || line;
+  return line.split(/\s*(?:\(|\bLv:|\bClan:|\bDPassed:)/i)[0]?.trim() || "Survivant inconnu";
 }
 
 export function parseServerInfo(info, playersOutput) {

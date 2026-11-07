@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { config } from "../config.js";
+import { bansEmbed, handleControlInteraction } from "./control-interactions.js";
 import { actionEmbed, statusEmbed } from "./embeds.js";
 import { sendAnnouncement, sendLog } from "./logs.js";
 
@@ -44,21 +45,9 @@ function safeResourceCode(value) {
   return /^[a-zA-Z0-9_.-]{1,64}$/.test(value);
 }
 
-function bansEmbed(output) {
-  const bans = output.trim();
-  const content = bans && !/^empty!?$/i.test(bans)
-    ? bans.replace(/`/g, "").slice(0, 3_800)
-    : "Aucun joueur banni par RCON.";
-
-  return new EmbedBuilder()
-    .setColor(0xf9a825)
-    .setTitle("R.A.D.A.R. | Liste des bannis")
-    .setDescription(content)
-    .setTimestamp();
-}
-
 export function createInteractionHandler({ client, service, monitor }) {
   return async (interaction) => {
+    if (await handleControlInteraction(interaction, { client, service, monitor, isStaff })) return;
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === "aide") {

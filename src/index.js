@@ -1,6 +1,7 @@
 import { ActivityType, Client, Events, GatewayIntentBits } from "discord.js";
 import { config } from "./config.js";
 import { deployCommands } from "./discord/commands.js";
+import { ensureControlPanel } from "./discord/control-panel.js";
 import { createInteractionHandler } from "./discord/interactions.js";
 import { registerMemberEvents } from "./discord/members.js";
 import { HumanitZMonitor } from "./humanitz/monitor.js";
@@ -19,6 +20,7 @@ client.once("clientReady", async () => {
   console.log(`Bot connecte: ${client.user.tag}`);
   try {
     await deployCommands(client.user.id);
+    await ensureControlPanel(client);
     monitor.start();
     console.log("Commandes R.A.D.A.R. synchronisees.");
     console.log("Surveillance HumanitZ active.");
