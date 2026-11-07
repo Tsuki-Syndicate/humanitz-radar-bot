@@ -2,7 +2,6 @@ import { EmbedBuilder } from "discord.js";
 import { config } from "../config.js";
 import { actionEmbed, statusEmbed } from "./embeds.js";
 import { sendAnnouncement, sendLog } from "./logs.js";
-import { handleDiscordAdminCommand } from "./admin.js";
 
 function memberHasRole(member, roleId) {
   if (!roleId || !member) return false;
@@ -89,22 +88,6 @@ export function createInteractionHandler({ client, service, monitor }) {
       } else {
         await member.roles.add(config.humanitz.alertRoleId, "Inscription volontaire aux alertes");
         await interaction.reply({ content: "Alertes serveur activees.", ephemeral: true });
-      }
-      return;
-    }
-
-    if (interaction.commandName === "discord") {
-      if (!isStaff(interaction)) {
-        await interaction.reply({ content: "Acces refuse: commande reservee au staff.", ephemeral: true });
-        return;
-      }
-
-      await interaction.deferReply({ ephemeral: true });
-      try {
-        await handleDiscordAdminCommand(interaction, client);
-      } catch (error) {
-        console.error("Commande Discord impossible:", error.message);
-        await interaction.editReply(`Action non executee: ${error.message}`);
       }
       return;
     }
