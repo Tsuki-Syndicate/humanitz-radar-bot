@@ -2,10 +2,11 @@ import { ActivityType, Client, Events, GatewayIntentBits } from "discord.js";
 import { config } from "./config.js";
 import { deployCommands } from "./discord/commands.js";
 import { createInteractionHandler } from "./discord/interactions.js";
+import { registerMemberEvents } from "./discord/members.js";
 import { HumanitZMonitor } from "./humanitz/monitor.js";
 import { HumanitZService } from "./humanitz/service.js";
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
 const service = new HumanitZService();
 const monitor = new HumanitZMonitor(client, service);
 
@@ -27,6 +28,7 @@ client.once("clientReady", async () => {
 });
 
 client.on(Events.InteractionCreate, createInteractionHandler({ client, service, monitor }));
+registerMemberEvents(client);
 
 client.login(config.discord.token).catch((error) => {
   console.error("Connexion Discord impossible:", error.message);

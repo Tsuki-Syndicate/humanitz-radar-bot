@@ -114,6 +114,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName("joueurs")
     .setDescription("Affiche les survivants actuellement connectes."),
+  new SlashCommandBuilder()
+    .setName("alertes")
+    .setDescription("Active ou retire les alertes du serveur HumanitZ."),
   discordAdminCommand,
   new SlashCommandBuilder()
     .setName("hz")

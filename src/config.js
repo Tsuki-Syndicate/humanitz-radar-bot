@@ -20,6 +20,8 @@ export const config = {
     announcementsChannelId: process.env.HUMANITZ_ANNOUNCEMENTS_CHANNEL_ID?.trim() || null,
     commandsChannelId: process.env.HUMANITZ_COMMANDS_CHANNEL_ID?.trim() || null,
     staffRoleId: process.env.HUMANITZ_STAFF_ROLE_ID?.trim() || null,
+    memberRoleId: process.env.HUMANITZ_MEMBER_ROLE_ID?.trim() || null,
+    alertRoleId: process.env.HUMANITZ_ALERT_ROLE_ID?.trim() || null,
     statusIntervalSeconds: Math.max(
       30,
       Number(process.env.HUMANITZ_STATUS_INTERVAL_SECONDS) || 60

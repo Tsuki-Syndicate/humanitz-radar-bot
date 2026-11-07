@@ -21,7 +21,7 @@ function helpEmbed() {
     .setTitle("R.A.D.A.R. | Assistance")
     .setDescription("Relais d'alerte et de defense des rescapes.")
     .addFields(
-      { name: "Public", value: "`/status` - etat du serveur\n`/joueurs` - survivants connectes", inline: false },
+      { name: "Public", value: "`/status` - etat du serveur\n`/joueurs` - survivants connectes\n`/alertes` - active ou retire les alertes", inline: false },
       { name: "Staff", value: "`/hz statut` `annonce` `redemarrer` `annuler` `meteo` `saison` `joueur`", inline: false }
     )
     .setFooter({ text: "Les commandes staff sont reservees au proprietaire et au role configure." });
@@ -72,6 +72,23 @@ export function createInteractionHandler({ client, service, monitor }) {
       } catch (error) {
         console.error("Lecture HumanitZ impossible:", error.message);
         await interaction.editReply("Le relais R.A.D.A.R. ne peut pas joindre le serveur HumanitZ pour le moment.");
+      }
+      return;
+    }
+
+    if (interaction.commandName === "alertes") {
+      if (!config.humanitz.alertRoleId) {
+        await interaction.reply({ content: "Les alertes serveur ne sont pas encore configurees.", ephemeral: true });
+        return;
+      }
+
+      const member = await interaction.guild.members.fetch(interaction.user.id);
+      if (member.roles.cache.has(config.humanitz.alertRoleId)) {
+        await member.roles.remove(config.humanitz.alertRoleId, "Desinscription volontaire aux alertes");
+        await interaction.reply({ content: "Tu ne recevras plus les alertes serveur.", ephemeral: true });
+      } else {
+        await member.roles.add(config.humanitz.alertRoleId, "Inscription volontaire aux alertes");
+        await interaction.reply({ content: "Alertes serveur activees.", ephemeral: true });
       }
       return;
     }
