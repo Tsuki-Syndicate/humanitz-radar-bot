@@ -28,7 +28,10 @@ export class HumanitZMonitor {
     this.running = true;
 
     try {
+      const startedAt = Date.now();
       const snapshot = await this.service.getStatus();
+      snapshot.latencyMs = Date.now() - startedAt;
+      snapshot.checkedAt = new Date();
       await this.publishStatus(statusEmbed(snapshot));
       await this.logChanges(snapshot);
       this.lastOnline = true;

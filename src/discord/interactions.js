@@ -63,7 +63,10 @@ export function createInteractionHandler({ client, service, monitor }) {
 
       await interaction.deferReply();
       try {
+        const startedAt = Date.now();
         const snapshot = await service.getStatus();
+        snapshot.latencyMs = Date.now() - startedAt;
+        snapshot.checkedAt = new Date();
         const embed = interaction.commandName === "status"
           ? statusEmbed(snapshot)
           : playersEmbed(snapshot);
