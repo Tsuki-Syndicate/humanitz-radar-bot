@@ -2,6 +2,7 @@ import { EmbedBuilder } from "discord.js";
 import { config } from "../config.js";
 import { actionEmbed, statusEmbed } from "./embeds.js";
 import { sendAnnouncement, sendLog } from "./logs.js";
+import { handleDiscordAdminCommand } from "./admin.js";
 
 function memberHasRole(member, roleId) {
   if (!roleId || !member) return false;
@@ -71,6 +72,22 @@ export function createInteractionHandler({ client, service, monitor }) {
       } catch (error) {
         console.error("Lecture HumanitZ impossible:", error.message);
         await interaction.editReply("Le relais R.A.D.A.R. ne peut pas joindre le serveur HumanitZ pour le moment.");
+      }
+      return;
+    }
+
+    if (interaction.commandName === "discord") {
+      if (!isStaff(interaction)) {
+        await interaction.reply({ content: "Acces refuse: commande reservee au staff.", ephemeral: true });
+        return;
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        await handleDiscordAdminCommand(interaction, client);
+      } catch (error) {
+        console.error("Commande Discord impossible:", error.message);
+        await interaction.editReply(`Action non executee: ${error.message}`);
       }
       return;
     }

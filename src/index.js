@@ -16,10 +16,14 @@ client.once("clientReady", async () => {
   });
 
   console.log(`Bot connecte: ${client.user.tag}`);
-  await deployCommands(client.user.id);
-  monitor.start();
-  console.log("Commandes R.A.D.A.R. synchronisees.");
-  console.log("Surveillance HumanitZ active.");
+  try {
+    await deployCommands(client.user.id);
+    monitor.start();
+    console.log("Commandes R.A.D.A.R. synchronisees.");
+    console.log("Surveillance HumanitZ active.");
+  } catch (error) {
+    console.error("Initialisation R.A.D.A.R. incomplete:", error.message);
+  }
 });
 
 client.on(Events.InteractionCreate, createInteractionHandler({ client, service, monitor }));
