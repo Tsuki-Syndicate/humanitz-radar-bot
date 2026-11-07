@@ -72,10 +72,10 @@ export function statusEmbed(snapshot, { online = true } = {}) {
   if (!online) {
     return new EmbedBuilder()
       .setColor(0xd32f2f)
-      .setTitle("R.A.D.A.R. // SIGNAL PERDU")
+      .setTitle("R.A.D.A.R. // 🔴 SIGNAL PERDU")
       .setDescription("Le relais ne recoit plus de reponse du serveur HumanitZ. La surveillance continue automatiquement.")
       .addFields(
-        { name: "Etat", value: "**INDISPONIBLE**", inline: true },
+        { name: "Etat", value: "🔴 **HORS LIGNE**", inline: true },
         { name: "Prochaine action", value: "Nouvelle tentative automatique", inline: true },
         { name: "Information", value: "Le serveur peut etre en redemarrage ou la liaison RCON peut etre indisponible.", inline: false }
       )
@@ -87,10 +87,10 @@ export function statusEmbed(snapshot, { online = true } = {}) {
 
   return new EmbedBuilder()
     .setColor(0x6f8f4e)
-    .setTitle("R.A.D.A.R. // TABLEAU DU SECTEUR")
+    .setTitle("R.A.D.A.R. // 🟢 SECTEUR EN LIGNE")
     .setDescription(`**${safeText(value(snapshot.name, "Serveur HumanitZ"))}**\n> Liaison RCON stable. Le secteur est sous surveillance.`)
     .addFields(
-      { name: "RELAIS", value: `**EN LIGNE**\nRCON: \`${latencyValue(snapshot.latencyMs)}\``, inline: true },
+      { name: "RELAIS", value: `🟢 **EN LIGNE**\nRCON: \`${latencyValue(snapshot.latencyMs)}\``, inline: true },
       { name: "POPULATION", value: `**${connected}** connecte(s)`, inline: true },
       { name: "HEURE LOCALE", value: `\`${value(snapshot.time)}\``, inline: true },
       { name: "MONDE", value: `${humanize(snapshot.season, seasons)}  |  ${humanize(snapshot.weather, weather)}`, inline: false },
