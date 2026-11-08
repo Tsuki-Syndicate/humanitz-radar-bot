@@ -28,6 +28,8 @@ export const config = {
     statusMirrorChannelIds: identifiers(process.env.HUMANITZ_STATUS_MIRROR_CHANNEL_IDS),
     connectionChannelIds: identifiers(process.env.HUMANITZ_CONNECTION_CHANNEL_IDS),
     communityLinkChannelIds: identifiers(process.env.HUMANITZ_COMMUNITY_LINK_CHANNEL_IDS),
+    activityRoleIds: identifiers(process.env.HUMANITZ_ACTIVITY_ROLE_IDS),
+    activityRolesChannelId: process.env.HUMANITZ_ACTIVITY_ROLES_CHANNEL_ID?.trim() || null,
     publicServerAddress: process.env.HUMANITZ_PUBLIC_SERVER_ADDRESS?.trim() || null,
     publicServerPassword: process.env.HUMANITZ_PUBLIC_SERVER_PASSWORD?.trim() || null,
     communityInviteUrl: process.env.HUMANITZ_COMMUNITY_INVITE_URL?.trim() || null,

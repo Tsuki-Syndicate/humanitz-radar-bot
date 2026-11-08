@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { config } from "../config.js";
+import { handleActivityRoleInteraction } from "./activity-roles.js";
 import { bansEmbed, handleControlInteraction } from "./control-interactions.js";
 import { actionEmbed, statusEmbed } from "./embeds.js";
 import { sendAnnouncement, sendLog } from "./logs.js";
@@ -47,6 +48,7 @@ function safeResourceCode(value) {
 
 export function createInteractionHandler({ client, service, monitor }) {
   return async (interaction) => {
+    if (await handleActivityRoleInteraction(interaction)) return;
     if (await handleControlInteraction(interaction, { client, service, monitor, isStaff })) return;
     if (!interaction.isChatInputCommand()) return;
 
