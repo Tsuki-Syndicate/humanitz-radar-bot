@@ -95,6 +95,9 @@ h3 { margin-bottom: 7px; font-size: 15px; }
 .tool p { min-height: 39px; margin-bottom: 17px; color: var(--muted); font-size: 13px; line-height: 1.45; }
 .tool label, .console-tool label, .confirmation-dialog label { display: grid; gap: 7px; margin-bottom: 13px; color: var(--muted); font-size: 12px; font-weight: 650; }
 .catalog-preview { min-height: 58px; margin: -2px 0 13px; padding: 10px; border-left: 2px solid var(--green); background: #18201b; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.catalog-preview:has(.catalog-image) { display: flex; align-items: center; gap: 11px; }
+.catalog-copy { min-width: 0; }
+.catalog-image { width: 64px; height: 64px; flex: 0 0 64px; object-fit: contain; border: 1px solid #465248; border-radius: 4px; background: #101512; }
 .catalog-preview strong, .catalog-preview span { display: block; }
 .catalog-preview strong { color: var(--text); font-size: 13px; }
 .catalog-preview p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }

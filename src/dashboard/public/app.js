@@ -1,4 +1,5 @@
 import { aiCatalog, backpackCatalog, itemCatalog, vehicleCatalog } from "./catalog.js";
+import { backpackImageSlugs, knownHumanitZImageSlugs } from "./catalog-images.js";
 
 const state = {
   csrf: null,
@@ -64,6 +65,20 @@ function catalogLabel(entry) {
   return details.join(" - ");
 }
 
+function catalogImageUrl(catalogName, entry) {
+  if (!["items", "backpacks"].includes(catalogName)) return null;
+  const itemSlug = entry.name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const slug = catalogName === "backpacks" ? backpackImageSlugs[entry.code] : itemSlug;
+  if (!slug || !knownHumanitZImageSlugs.has(slug)) return null;
+  return `https://humanitz.codexery.com/images/humanitz/${slug}.webp`;
+}
+
 function renderCatalogPreview(name, entry) {
   document.querySelectorAll(`[data-catalog-preview="${name}"]`).forEach((preview) => {
     preview.replaceChildren();
@@ -74,6 +89,19 @@ function renderCatalogPreview(name, entry) {
       return;
     }
 
+    const imageUrl = catalogImageUrl(name, entry);
+    if (imageUrl) {
+      const image = document.createElement("img");
+      image.className = "catalog-image";
+      image.src = imageUrl;
+      image.alt = entry.name;
+      image.loading = "lazy";
+      image.addEventListener("error", () => image.remove(), { once: true });
+      preview.append(image);
+    }
+
+    const content = document.createElement("div");
+    content.className = "catalog-copy";
     const nameElement = document.createElement("strong");
     nameElement.textContent = entry.name;
     const details = document.createElement("span");
@@ -83,13 +111,14 @@ function renderCatalogPreview(name, entry) {
     if (entry.maxStack > 1) metadata.push(`Pile maximale: ${entry.maxStack}`);
     if (entry.weight) metadata.push(`Poids: ${entry.weight}`);
     details.textContent = metadata.join(" | ");
-    preview.append(nameElement, details);
+    content.append(nameElement, details);
 
     if (entry.description) {
       const description = document.createElement("p");
       description.textContent = entry.description;
-      preview.append(description);
+      content.append(description);
     }
+    preview.append(content);
   });
 }
 
