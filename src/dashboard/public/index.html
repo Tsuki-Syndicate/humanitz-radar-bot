@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr-CA">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#121714">
+    <title>R.A.D.A.R. | Quebec Survivors</title>
+    <link rel="stylesheet" href="/assets/app.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navigation du panneau">
+        <div class="brand">
+          <img id="bot-avatar" class="bot-avatar" alt="">
+          <div>
+            <strong>R.A.D.A.R.</strong>
+            <span>Quebec Survivors</span>
+          </div>
+        </div>
+        <nav>
+          <a href="#surveillance">Surveillance</a>
+          <a href="#survivants">Survivants</a>
+          <a href="#serveur">Serveur</a>
+          <a href="#administration">Administration</a>
+          <a href="#bot">Bot Discord</a>
+          <a href="#console">Console RCON</a>
+        </nav>
+        <div class="sidebar-note">
+          <span class="lock-mark">●</span>
+          Panneau prive
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">CENTRE DE COMMANDE</p>
+            <h1>Quebec Survivors</h1>
+          </div>
+          <div class="account">
+            <img id="user-avatar" class="user-avatar" alt="">
+            <span id="user-name">Chargement...</span>
+            <button id="logout" class="icon-button" type="button" title="Se deconnecter" aria-label="Se deconnecter">↪</button>
+          </div>
+        </header>
+
+        <section id="surveillance" class="section first-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">TEMPS REEL</p>
+              <h2>Surveillance du secteur</h2>
+            </div>
+            <button id="refresh-status" class="button secondary" type="button">↻ Actualiser</button>
+          </div>
+          <div class="status-layout">
+            <div class="status-main">
+              <div id="online-dot" class="status-dot offline"></div>
+              <div>
+                <span id="server-state">Verification du serveur...</span>
+                <strong id="server-name">HumanitZ</strong>
+                <small id="checked-at">Connexion RCON en attente</small>
+              </div>
+            </div>
+            <dl class="metrics">
+              <div><dt>Survivants</dt><dd id="metric-players">-</dd></div>
+              <div><dt>Latence RCON</dt><dd id="metric-latency">-</dd></div>
+              <div><dt>Uptime</dt><dd id="metric-uptime">-</dd></div>
+              <div><dt>Saison</dt><dd id="metric-season">-</dd></div>
+              <div><dt>Meteo</dt><dd id="metric-weather">-</dd></div>
+              <div><dt>Heure</dt><dd id="metric-time">-</dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section id="survivants" class="section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">CONNEXIONS</p>
+              <h2>Survivants en ligne</h2>
+            </div>
+            <span id="survivor-count" class="count">0</span>
+          </div>
+          <div class="survivor-layout">
+            <div id="player-list" class="player-list" aria-live="polite">
+              <div class="empty-state">Aucun survivant connecte.</div>
+            </div>
+            <div class="map-panel">
+              <div class="map-toolbar">
+                <span><i></i> Positions RCON en direct</span>
+                <small id="map-updated">En attente de joueurs</small>
+              </div>
+              <div id="live-map" class="live-map" role="img" aria-label="Carte live HumanitZ">
+                <img src="/assets/humanitz-terrain.png" alt="Carte du monde HumanitZ">
+                <div id="map-pins" class="map-pins"></div>
+                <div id="map-empty" class="map-empty">Aucun survivant en ligne. Les positions reelles apparaitront ici.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="serveur" class="section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">OPERATIONS</p>
+              <h2>Serveur HumanitZ</h2>
+            </div>
+          </div>
+          <div class="tool-grid">
+            <form class="tool" data-api="/api/server/announce">
+              <h3>Annonce en jeu</h3>
+              <p>Visible directement aux survivants connectes.</p>
+              <label>Message<textarea name="message" maxlength="180" required placeholder="Message pour les survivants"></textarea></label>
+              <button class="button" type="submit">Envoyer l'annonce</button>
+            </form>
+
+            <form class="tool" data-api="/api/server/restart" data-confirm-title="Programmer un redemarrage" data-confirm-text="Le serveur sera redemarre apres le delai choisi.">
+              <h3>Redemarrage planifie</h3>
+              <p>Le serveur avertit les survivants avant le redemarrage.</p>
+              <label>Delai en minutes<input name="minutes" type="number" min="1" max="120" value="15" required></label>
+              <button class="button warning" type="submit">Programmer</button>
+            </form>
+
+            <form class="tool" data-api="/api/world/weather">
+              <h3>Meteo</h3>
+              <p>Change l'ambiance de la partie en cours.</p>
+              <label>Meteo
+                <select name="weather">
+                  <option value="clear">Clair</option><option value="partly_cloudy">Partiellement nuageux</option><option value="overcast">Couvert</option><option value="foggy">Brouillard</option><option value="light_rain">Pluie legere</option><option value="rain">Pluie</option><option value="thunder">Orage</option><option value="snow">Neige</option><option value="blizzard">Blizzard</option>
+                </select>
+              </label>
+              <button class="button" type="submit">Appliquer</button>
+            </form>
+
+            <form class="tool" data-api="/api/world/season">
+              <h3>Saison</h3>
+              <p>Definit la saison du monde HumanitZ.</p>
+              <label>Saison
+                <select name="season">
+                  <option value="spring">Printemps</option><option value="summer">Ete</option><option value="autumn">Automne</option><option value="winter">Hiver</option>
+                </select>
+              </label>
+              <button class="button" type="submit">Appliquer</button>
+            </form>
+          </div>
+          <div class="danger-strip">
+            <button class="button warning" type="button" data-confirm-api="/api/server/cancel-restart" data-confirm-title="Annuler le redemarrage" data-confirm-text="Le redemarrage planifie sera annule.">Annuler le redemarrage</button>
+            <button class="button danger" type="button" data-confirm-api="/api/server/restart-now" data-confirm-title="Redemarrage immediat" data-confirm-text="Tous les survivants seront interrompus." data-confirm-phrase="REDEMARRER">Redemarrer maintenant</button>
+            <button class="button danger" type="button" data-shutdown>Arreter le serveur</button>
+          </div>
+        </section>
+
+        <section id="administration" class="section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">STAFF</p>
+              <h2>Administration des survivants</h2>
+            </div>
+            <button id="load-bans" class="button secondary" type="button">Voir les bannis</button>
+          </div>
+          <pre id="bans-output" class="console-output hidden" aria-live="polite"></pre>
+          <p class="section-copy">Les identifiants de jeu restent invisibles dans l'interface. Ils servent seulement a transmettre l'action RCON choisie.</p>
+          <div class="tool-grid spawn-grid">
+            <form class="tool" data-api="/api/spawn/item">
+              <h3>Envoyer un objet</h3>
+              <label>Survivant<select name="identifier" data-player-select required></select></label>
+              <label>Rechercher un objet<input type="search" data-catalog-search="items" placeholder="Nom ou code"></label>
+              <label>Objet et code<select name="code" data-catalog-select="items" required></select></label>
+              <div class="catalog-preview" data-catalog-preview="items" aria-live="polite"></div>
+              <label>Quantite<input name="quantity" type="number" min="1" max="99" value="1" required></label>
+              <button class="button" type="submit">Envoyer l'objet</button>
+            </form>
+            <form class="tool" data-api="/api/spawn/backpack">
+              <h3>Envoyer un sac</h3>
+              <label>Survivant<select name="identifier" data-player-select required></select></label>
+              <label>Rechercher un sac<input type="search" data-catalog-search="backpacks" placeholder="Nom ou code"></label>
+              <label>Sac et code<select name="code" data-catalog-select="backpacks" required></select></label>
+              <div class="catalog-preview" data-catalog-preview="backpacks" aria-live="polite"></div>
+              <button class="button" type="submit">Envoyer le sac</button>
+            </form>
+            <form class="tool" data-api="/api/spawn/vehicle">
+              <h3>Envoyer un vehicule</h3>
+              <label>Survivant<select name="identifier" data-player-select required></select></label>
+              <label>Rechercher un vehicule<input type="search" data-catalog-search="vehicles" placeholder="Nom ou code"></label>
+              <label>Vehicule et code<select name="code" data-catalog-select="vehicles" required></select></label>
+              <div class="catalog-preview" data-catalog-preview="vehicles" aria-live="polite"></div>
+              <button class="button" type="submit">Envoyer le vehicule</button>
+            </form>
+            <form class="tool" data-api="/api/spawn/ai">
+              <h3>Envoyer une IA</h3>
+              <label>Survivant<select name="identifier" data-player-select required></select></label>
+              <label>Rechercher une IA<input type="search" data-catalog-search="ai" placeholder="Nom ou code"></label>
+              <label>Type d'IA et code<select name="type" data-catalog-select="ai" required></select></label>
+              <div class="catalog-preview" data-catalog-preview="ai" aria-live="polite"></div>
+              <label>Quantite<input name="quantity" type="number" min="1" max="20" value="1" required></label>
+              <label>Distance en metres<input name="distance" type="number" min="5" max="150" value="25" required></label>
+              <button class="button" type="submit">Envoyer l'IA</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="bot" class="section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">DISCORD</p>
+              <h2>Bot R.A.D.A.R.</h2>
+            </div>
+          </div>
+          <p id="bot-mode-message" class="section-copy hidden">La gestion du bot est disponible sur l'instance Apollo afin d'eviter une deuxieme connexion Discord locale.</p>
+          <div class="tool-grid bot-grid">
+            <form class="tool" data-api="/api/bot/presence">
+              <h3>Presence du bot</h3>
+              <p>Le texte affiche sous le nom de R.A.D.A.R. dans Discord.</p>
+              <label>Presence<input name="presence" maxlength="100" value="HumanitZ | Secteur surveille" required></label>
+              <button class="button" type="submit">Mettre a jour</button>
+            </form>
+            <div class="tool">
+              <h3>Synchronisation</h3>
+              <p>Rafraichit les commandes slash dans le serveur Discord.</p>
+              <button id="sync-commands" class="button secondary" type="button">Synchroniser les commandes</button>
+              <button id="refresh-discord" class="button secondary" type="button">Actualiser l'etat Discord</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="console" class="section last-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">AVANCE</p>
+              <h2>Console RCON</h2>
+            </div>
+            <span class="restricted">Staff seulement</span>
+          </div>
+          <form id="raw-console" class="console-tool">
+            <label>Commande RCON<textarea name="command" maxlength="250" required placeholder="Exemple: info"></textarea></label>
+            <div class="console-actions">
+              <label>Pour confirmer, ecris EXECUTER<input name="confirmation" autocomplete="off" required></label>
+              <button class="button warning" type="submit">Executer la commande</button>
+            </div>
+          </form>
+          <pre id="raw-output" class="console-output hidden" aria-live="polite"></pre>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="confirm-dialog" class="confirmation-dialog">
+      <form method="dialog" id="confirm-form">
+        <p class="eyebrow">CONFIRMATION</p>
+        <h2 id="confirm-title">Confirmer l'action</h2>
+        <p id="confirm-text"></p>
+        <label id="confirm-phrase-row" class="hidden">Pour confirmer, ecris <strong id="confirm-phrase-label"></strong><input id="confirm-phrase" autocomplete="off"></label>
+        <div class="dialog-actions">
+          <button class="button secondary" value="cancel" type="button" id="confirm-cancel">Retour</button>
+          <button class="button danger" value="confirm" type="submit">Confirmer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="shutdown-dialog" class="confirmation-dialog">
+      <form method="dialog" id="shutdown-form">
+        <p class="eyebrow">MAINTENANCE</p>
+        <h2>Arreter le serveur</h2>
+        <p>Cette commande arrete le serveur HumanitZ immediatement.</p>
+        <label>Pour confirmer, ecris <strong>ARRETER</strong><input name="confirmation" autocomplete="off" required></label>
+        <div class="dialog-actions">
+          <button class="button secondary" value="cancel" type="button" id="shutdown-cancel">Retour</button>
+          <button class="button danger" value="confirm" type="submit">Arreter maintenant</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/assets/app.js"></script>
+  </body>
+</html>

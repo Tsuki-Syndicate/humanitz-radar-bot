@@ -6,10 +6,12 @@
   "description": "Bot Discord dedie au serveur HumanitZ.",
   "scripts": {
     "start": "node src/index.js",
+    "dashboard:local": "node src/dashboard/local.js",
     "rcon:check": "node src/scripts/rcon-check.js"
   },
   "dependencies": {
     "discord.js": "^14.27.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "express": "^5.3.0"
   }
 }

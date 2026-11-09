@@ -1,4 +1,7 @@
 node_modules/
+.radar-state/
 .env
 npm-debug.log*
 logs/
+*.local.log
+*.local.error.log
