@@ -21,8 +21,8 @@ function playerRecord(line) {
   };
 }
 
-function playerData(output) {
-  const fields = Object.fromEntries(
+function playerFields(output) {
+  return Object.fromEntries(
     output
       .split(/\r?\n/)
       .map((line) => {
@@ -33,6 +33,10 @@ function playerData(output) {
       })
       .filter(Boolean)
   );
+}
+
+function playerData(output) {
+  const fields = playerFields(output);
   const match = fields.pos?.match(
     /X\s*=\s*(-?\d+(?:\.\d+)?)\s+Y\s*=\s*(-?\d+(?:\.\d+)?)\s+Z\s*=\s*(-?\d+(?:\.\d+)?)/i
   );
@@ -43,6 +47,16 @@ function playerData(output) {
       ? { x: Number(match[1]), y: Number(match[2]), z: Number(match[3]) }
       : null
   };
+}
+
+export function parsePlayerDetails(output) {
+  const parsed = playerData(output);
+  const hidden = /steam|net.?id|inventory|clan|password|token/i;
+  const details = Object.entries(playerFields(output))
+    .filter(([key, value]) => key !== "name" && key !== "pos" && !hidden.test(key) && value && value.length <= 160)
+    .slice(0, 24)
+    .map(([key, value]) => ({ key, value }));
+  return { ...parsed, details };
 }
 
 export function parseServerInfo(info, playersOutput) {
@@ -160,6 +174,10 @@ export class HumanitZService {
     }
   }
 
+  async getPlayerDetails(identifier) {
+    return parsePlayerDetails(await this.execute(`fetchplayerdata ${identifier}`));
+  }
+
   announce(message) {
     return this.execute(`admin message ${message}`);
   }
@@ -182,6 +200,10 @@ export class HumanitZService {
 
   shutdown() {
     return this.execute("shutdown");
+  }
+
+  save() {
+    return this.execute("save");
   }
 
   listBans() {
@@ -222,5 +244,21 @@ export class HumanitZService {
 
   spawnAi(netId, aiType, quantity, distance) {
     return this.execute(`spawnai ${netId} ${aiType} ${quantity} ${distance}`);
+  }
+
+  async giveKit(netId, kit) {
+    const commands = [
+      ...(kit.backpack ? [`spawnbackpack ${netId} ${kit.backpack}`] : []),
+      ...kit.items.map((item) => `spawnitem ${netId} ${item.code} ${item.quantity}`)
+    ];
+    if (!commands.length) throw new Error("Kit HumanitZ vide.");
+
+    const rcon = this.createConnection();
+    try {
+      await rcon.connect();
+      for (const command of commands) await rcon.command(command);
+    } finally {
+      rcon.disconnect();
+    }
   }
 }

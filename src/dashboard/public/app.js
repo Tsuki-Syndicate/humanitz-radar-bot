@@ -170,6 +170,14 @@ function playerActionRow(player) {
 
   const actions = document.createElement("div");
   actions.className = "player-actions";
+  const detailsButton = document.createElement("button");
+  detailsButton.className = "button secondary";
+  detailsButton.type = "button";
+  detailsButton.textContent = "Details";
+  detailsButton.disabled = !player.identifier;
+  detailsButton.addEventListener("click", async () => {
+    await runButton(detailsButton, async () => showPlayerDetails(player));
+  });
   const select = document.createElement("select");
   [
     ["unstuck", "Debloquer"],
@@ -202,9 +210,39 @@ function playerActionRow(player) {
     });
   });
 
-  actions.append(select, button);
+  actions.append(detailsButton, select, button);
   row.append(name, actions);
   return row;
+}
+
+function detailLabel(key) {
+  return key.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+async function showPlayerDetails(player) {
+  const payload = await api(`/api/players/${encodeURIComponent(player.identifier)}/details`);
+  $("#player-details-name").textContent = payload.name || player.name;
+  $("#player-details-position").textContent = payload.position
+    ? `Position: ${Math.round(payload.position.x)}, ${Math.round(payload.position.y)}, ${Math.round(payload.position.z)}`
+    : "Position indisponible";
+  const list = $("#player-details-list");
+  list.replaceChildren();
+  const details = Array.isArray(payload.details) ? payload.details : [];
+  if (!details.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Aucune donnee supplementaire disponible.";
+    list.append(empty);
+  } else {
+    details.forEach((detail) => {
+      const term = document.createElement("dt");
+      term.textContent = detailLabel(detail.key);
+      const definition = document.createElement("dd");
+      definition.textContent = detail.value;
+      list.append(term, definition);
+    });
+  }
+  $("#player-details-dialog").showModal();
 }
 
 function renderPlayers(players) {
@@ -290,6 +328,58 @@ async function refreshMap() {
   }
 }
 
+async function loadRestartSchedule() {
+  const schedule = await api("/api/server/restart-schedule");
+  $("#daily-restart-next").textContent = schedule.enabled && schedule.nextAt
+    ? new Date(schedule.nextAt).toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short", timeZone: schedule.timeZone })
+    : "Desactive";
+  $("#daily-restart-warning").textContent = schedule.enabled
+    ? `${schedule.warningMinutes} minutes avant ${String(schedule.hour).padStart(2, "0")}:00`
+    : "-";
+  $("#daily-restart-zone").textContent = schedule.timeZone;
+}
+
+async function loadKits() {
+  const payload = await api("/api/kits");
+  const select = $("#kit-select");
+  select.replaceChildren();
+  payload.kits.forEach((kit) => select.add(new Option(kit.name, kit.id)));
+  const updateDescription = () => {
+    const kit = payload.kits.find((candidate) => candidate.id === select.value);
+    $("#kit-description").textContent = kit?.description || "Choisis un kit.";
+  };
+  select.addEventListener("change", updateDescription);
+  updateDescription();
+}
+
+function historyDate(value) {
+  return new Date(value).toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short" });
+}
+
+async function refreshHistory() {
+  const payload = await api("/api/history?limit=60");
+  const list = $("#history-list");
+  list.replaceChildren();
+  if (!payload.entries?.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Aucune action enregistree.";
+    list.append(empty);
+  } else {
+    payload.entries.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = `history-row ${entry.tone || "normal"}`;
+      const action = document.createElement("strong");
+      action.textContent = entry.action;
+      const meta = document.createElement("span");
+      meta.textContent = `${entry.actor} - ${historyDate(entry.at)}`;
+      row.append(action, meta);
+      list.append(row);
+    });
+  }
+  $("#history-updated").textContent = payload.entries?.length ? "60 dernieres actions" : "Aucune action";
+}
+
 function formData(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
@@ -365,6 +455,7 @@ function registerApiForms() {
         if (confirmTitle) body.confirmed = true;
         const payload = await api(form.dataset.api, { method: "POST", body });
         showToast(payload.message || "Action terminee.");
+        void refreshHistory();
         if (form.dataset.api.startsWith("/api/world/") || form.dataset.api.includes("restart")) {
           window.setTimeout(refreshStatus, 350);
         }
@@ -389,6 +480,7 @@ function registerConfirmationButtons() {
           body: { confirmed: true, confirmation: phrase || undefined }
         });
         showToast(payload.message || "Action terminee.");
+        void refreshHistory();
       });
     });
   });
@@ -417,6 +509,7 @@ function registerShutdown() {
       });
       dialog.close();
       showToast(payload.message);
+      void refreshHistory();
     });
   });
 }
@@ -428,6 +521,7 @@ function registerUtilities() {
       const output = $("#bans-output");
       output.textContent = payload.output;
       output.classList.remove("hidden");
+      void refreshHistory();
     });
   });
   $("#sync-commands").addEventListener("click", async () => {
@@ -457,6 +551,7 @@ function registerUtilities() {
       output.textContent = payload.output;
       output.classList.remove("hidden");
       showToast("Commande RCON executee.");
+      void refreshHistory();
     });
   });
   $("#logout").addEventListener("click", async () => {
@@ -484,6 +579,7 @@ async function boot() {
       });
     }
     initializeCatalogs();
+    await loadKits();
     registerApiForms();
     registerConfirmationButtons();
     registerShutdown();
@@ -491,8 +587,11 @@ async function boot() {
     $("#refresh-status").addEventListener("click", refreshStatus);
     await refreshStatus();
     await refreshMap();
+    await loadRestartSchedule();
+    await refreshHistory();
     window.setInterval(refreshStatus, 30_000);
     window.setInterval(refreshMap, 20_000);
+    window.setInterval(refreshHistory, 30_000);
   } catch (error) {
     showToast(error.message || "Le panneau ne peut pas demarrer.", true);
   }

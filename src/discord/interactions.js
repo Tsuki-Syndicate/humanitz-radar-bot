@@ -39,7 +39,7 @@ function playersEmbed(snapshot) {
 }
 
 function safeIdentifier(value) {
-  return /^[a-zA-Z0-9_-]{3,64}$/.test(value);
+  return /^[A-Za-z0-9_+|:@.-]{3,128}$/.test(value);
 }
 
 function safeResourceCode(value) {

@@ -22,6 +22,7 @@
           <a href="#survivants">Survivants</a>
           <a href="#serveur">Serveur</a>
           <a href="#administration">Administration</a>
+          <a href="#historique">Historique</a>
           <a href="#bot">Bot Discord</a>
           <a href="#console">Console RCON</a>
         </nav>
@@ -105,6 +106,11 @@
               <h2>Serveur HumanitZ</h2>
             </div>
           </div>
+          <div class="restart-overview" aria-live="polite">
+            <div><span>Prochain redemarrage automatique</span><strong id="daily-restart-next">Chargement...</strong></div>
+            <div><span>Avertissement</span><strong id="daily-restart-warning">-</strong></div>
+            <div><span>Fuseau horaire</span><strong id="daily-restart-zone">-</strong></div>
+          </div>
           <div class="tool-grid">
             <form class="tool" data-api="/api/server/announce">
               <h3>Annonce en jeu</h3>
@@ -118,6 +124,12 @@
               <p>Le serveur avertit les survivants avant le redemarrage.</p>
               <label>Delai en minutes<input name="minutes" type="number" min="1" max="120" value="15" required></label>
               <button class="button warning" type="submit">Programmer</button>
+            </form>
+
+            <form class="tool" data-api="/api/server/save">
+              <h3>Sauvegarde immediate</h3>
+              <p>Demande au serveur d'enregistrer le monde et les survivants maintenant.</p>
+              <button class="button secondary" type="submit">Sauvegarder maintenant</button>
             </form>
 
             <form class="tool" data-api="/api/world/weather">
@@ -158,8 +170,20 @@
             <button id="load-bans" class="button secondary" type="button">Voir les bannis</button>
           </div>
           <pre id="bans-output" class="console-output hidden" aria-live="polite"></pre>
+          <form class="unban-form" data-api="/api/players/action">
+            <input name="action" type="hidden" value="unban">
+            <label>Identifiant du joueur banni<input name="identifier" required placeholder="Identifiant HumanitZ"></label>
+            <button class="button secondary" type="submit">Debannir</button>
+          </form>
           <p class="section-copy">Les identifiants de jeu restent invisibles dans l'interface. Ils servent seulement a transmettre l'action RCON choisie.</p>
           <div class="tool-grid spawn-grid">
+            <form class="tool" data-api="/api/players/kit">
+              <h3>Envoyer un kit</h3>
+              <p id="kit-description">Chargement des kits disponibles.</p>
+              <label>Survivant<select name="identifier" data-player-select required></select></label>
+              <label>Kit<select name="kit" id="kit-select" required></select></label>
+              <button class="button" type="submit">Envoyer le kit</button>
+            </form>
             <form class="tool" data-api="/api/spawn/item">
               <h3>Envoyer un objet</h3>
               <label>Survivant<select name="identifier" data-player-select required></select></label>
@@ -195,6 +219,19 @@
               <label>Distance en metres<input name="distance" type="number" min="5" max="150" value="25" required></label>
               <button class="button" type="submit">Envoyer l'IA</button>
             </form>
+          </div>
+        </section>
+
+        <section id="historique" class="section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">JOURNAL PRIVE</p>
+              <h2>Historique des actions</h2>
+            </div>
+            <span id="history-updated" class="count">-</span>
+          </div>
+          <div id="history-list" class="history-list" aria-live="polite">
+            <div class="empty-state">Aucune action enregistree.</div>
           </div>
         </section>
 
@@ -265,6 +302,16 @@
           <button class="button secondary" value="cancel" type="button" id="shutdown-cancel">Retour</button>
           <button class="button danger" value="confirm" type="submit">Arreter maintenant</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="player-details-dialog" class="confirmation-dialog player-details-dialog">
+      <form method="dialog">
+        <p class="eyebrow">SURVIVANT</p>
+        <h2 id="player-details-name">Details du survivant</h2>
+        <div id="player-details-position" class="player-position"></div>
+        <dl id="player-details-list" class="player-details-list"></dl>
+        <div class="dialog-actions"><button class="button secondary" type="submit">Fermer</button></div>
       </form>
     </dialog>
 

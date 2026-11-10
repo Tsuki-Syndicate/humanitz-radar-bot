@@ -4,7 +4,10 @@ import express from "express";
 import { ActivityType } from "discord.js";
 import { config } from "../config.js";
 import { sendLog } from "../discord/logs.js";
+import { findKit, listKits } from "../humanitz/kits.js";
+import { restartActionAt } from "../humanitz/restart-scheduler.js";
 import { dashboardAuth, dashboardCsrf, dashboardPageAuth, mountDashboardAuth } from "./auth.js";
+import { DashboardHistory } from "./history.js";
 
 const dashboardDirectory = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.join(dashboardDirectory, "public");
@@ -29,7 +32,7 @@ function integer(value, minimum, maximum) {
 }
 
 function playerIdentifier(value) {
-  return typeof value === "string" && /^[A-Za-z0-9_+|:-]{3,128}$/.test(value) ? value : null;
+  return typeof value === "string" && /^[A-Za-z0-9_+|:@.-]{3,128}$/.test(value) ? value : null;
 }
 
 function resourceCode(value) {
@@ -67,9 +70,38 @@ function actor(request) {
   return request.dashboardUser?.username || "Administrateur inconnu";
 }
 
-async function audit(client, request, action, color = 0x5bce77) {
+function historyTone(color) {
+  if (color === 0xd32f2f) return "danger";
+  if (color === 0xf9a825) return "warning";
+  return "normal";
+}
+
+async function audit(client, history, request, action, color = 0x5bce77) {
+  await history.add({ actor: actor(request), action, tone: historyTone(color) });
   if (!client?.channels?.fetch) return;
   await sendLog(client, "R.A.D.A.R. | Panneau web", `**${actor(request)}**: ${action}`, color);
+}
+
+function nextScheduledRestart() {
+  if (!config.humanitz.dailyRestart.enabled) return null;
+  const minute = 60_000;
+  const start = Date.now();
+  for (let offset = 0; offset <= 48 * 60; offset += 1) {
+    const candidate = new Date(start + offset * minute);
+    if (restartActionAt(candidate)?.type === "restart") return candidate.toISOString();
+  }
+  return null;
+}
+
+function restartSchedulePayload() {
+  const schedule = config.humanitz.dailyRestart;
+  return {
+    enabled: schedule.enabled,
+    hour: schedule.hour,
+    warningMinutes: schedule.warningMinutes,
+    timeZone: schedule.timeZone,
+    nextAt: nextScheduledRestart()
+  };
 }
 
 function botAvailable(client) {
@@ -137,6 +169,9 @@ export async function startDashboard({ client, service, monitor, deployCommands 
     throw new Error("Le panneau public exige les variables OAuth Discord et DASHBOARD_SESSION_SECRET.");
   }
 
+  const history = new DashboardHistory();
+  await history.load();
+
   const app = express();
   app.disable("x-powered-by");
   app.use(addHeaders);
@@ -159,6 +194,18 @@ export async function startDashboard({ client, service, monitor, deployCommands 
     });
   });
 
+  api.get("/history", (request, response) => {
+    response.json({ entries: history.list(integer(request.query.limit, 1, 100) || 60) });
+  });
+
+  api.get("/kits", (request, response) => {
+    response.json({ kits: listKits() });
+  });
+
+  api.get("/server/restart-schedule", (request, response) => {
+    response.json(restartSchedulePayload());
+  });
+
   api.get("/status", apiAction(async (request, response) => {
     const startedAt = Date.now();
     const snapshot = await service.getStatus();
@@ -176,7 +223,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
 
   api.post("/monitor/refresh", apiAction(async (request, response) => {
     await monitor.tick();
-    await audit(client, request, "mise a jour manuelle du statut Discord.");
+    await audit(client, history, request, "mise a jour manuelle du statut Discord.");
     response.json({ ok: true, message: "Statut Discord actualise." });
   }));
 
@@ -187,7 +234,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.announce(message);
-    await audit(client, request, "annonce envoyee dans le serveur HumanitZ.");
+    await audit(client, history, request, "annonce envoyee dans le serveur HumanitZ.");
     response.json({ ok: true, message: "Annonce transmise au serveur." });
   }));
 
@@ -201,28 +248,28 @@ export async function startDashboard({ client, service, monitor, deployCommands 
     await service.restart(minutes);
     const message = `Redemarrage du serveur dans ${minutes} minute(s). Mettez-vous en securite.`;
     await service.announce(message);
-    await audit(client, request, `redemarrage programme dans ${minutes} minute(s).`, 0xf9a825);
+    await audit(client, history, request, `redemarrage programme dans ${minutes} minute(s).`, 0xf9a825);
     response.json({ ok: true, message: `Redemarrage programme dans ${minutes} minute(s).` });
   }));
 
   api.post("/server/restart-now", apiAction(async (request, response) => {
     if (!requireConfirmation(request, response, "REDEMARRER")) return;
     await service.restartNow();
-    await audit(client, request, "redemarrage immediat transmis.", 0xd32f2f);
+    await audit(client, history, request, "redemarrage immediat transmis.", 0xd32f2f);
     response.json({ ok: true, message: "Redemarrage immediat transmis au serveur." });
   }));
 
   api.post("/server/cancel-restart", apiAction(async (request, response) => {
     if (!requireConfirmation(request, response)) return;
     await service.cancelRestart();
-    await audit(client, request, "redemarrage programme annule.", 0xf9a825);
+    await audit(client, history, request, "redemarrage programme annule.", 0xf9a825);
     response.json({ ok: true, message: "Redemarrage programme annule." });
   }));
 
   api.post("/server/shutdown", apiAction(async (request, response) => {
     if (!requireConfirmation(request, response, "ARRETER")) return;
     await service.shutdown();
-    await audit(client, request, "arret immediat du serveur transmis.", 0xd32f2f);
+    await audit(client, history, request, "arret immediat du serveur transmis.", 0xd32f2f);
     response.json({ ok: true, message: "Arret immediat transmis au serveur." });
   }));
 
@@ -233,7 +280,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.setWeather(weather);
-    await audit(client, request, `meteo changee: ${weather}.`);
+    await audit(client, history, request, `meteo changee: ${weather}.`);
     response.json({ ok: true, message: `Meteo changee: ${weather}.` });
   }));
 
@@ -244,14 +291,41 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.setSeason(season);
-    await audit(client, request, `saison changee: ${season}.`);
+    await audit(client, history, request, `saison changee: ${season}.`);
     response.json({ ok: true, message: `Saison changee: ${season}.` });
   }));
 
   api.get("/server/bans", apiAction(async (request, response) => {
     const output = await service.listBans();
-    await audit(client, request, "liste des bannis consultee.");
+    await audit(client, history, request, "liste des bannis consultee.");
     response.json({ output: sanitizeOutput(output) });
+  }));
+
+  api.post("/server/save", apiAction(async (request, response) => {
+    await service.save();
+    await audit(client, history, request, "sauvegarde immediate demandee.");
+    response.json({ ok: true, message: "Sauvegarde immediate transmise au serveur." });
+  }));
+
+  api.get("/players/:identifier/details", apiAction(async (request, response) => {
+    const identifier = playerIdentifier(request.params.identifier);
+    if (!identifier) {
+      response.status(400).json({ error: "Survivant invalide." });
+      return;
+    }
+    response.json(await service.getPlayerDetails(identifier));
+  }));
+
+  api.post("/players/kit", apiAction(async (request, response) => {
+    const identifier = playerIdentifier(request.body?.identifier);
+    const kit = findKit(text(request.body?.kit, 32));
+    if (!identifier || !kit) {
+      response.status(400).json({ error: "Survivant ou kit invalide." });
+      return;
+    }
+    await service.giveKit(identifier, kit);
+    await audit(client, history, request, `kit ${kit.name} envoye a un survivant.`);
+    response.json({ ok: true, message: `Kit ${kit.name} envoye.` });
   }));
 
   api.post("/players/action", apiAction(async (request, response) => {
@@ -263,7 +337,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
     }
     if (["kick", "ban"].includes(action) && !requireConfirmation(request, response)) return;
     await service.playerAction(action, identifier);
-    await audit(client, request, `action ${action} transmise pour un survivant.`, action === "ban" ? 0xd32f2f : 0xf9a825);
+    await audit(client, history, request, `action ${action} transmise pour un survivant.`, action === "ban" ? 0xd32f2f : 0xf9a825);
     response.json({ ok: true, message: `Action ${action} transmise.` });
   }));
 
@@ -276,7 +350,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.spawnItem(identifier, code, quantity);
-    await audit(client, request, `objet ${code} x${quantity} envoye a un survivant.`);
+    await audit(client, history, request, `objet ${code} x${quantity} envoye a un survivant.`);
     response.json({ ok: true, message: `Objet ${code} x${quantity} envoye.` });
   }));
 
@@ -288,7 +362,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.spawnBackpack(identifier, code);
-    await audit(client, request, `sac ${code} envoye a un survivant.`);
+    await audit(client, history, request, `sac ${code} envoye a un survivant.`);
     response.json({ ok: true, message: `Sac ${code} envoye.` });
   }));
 
@@ -300,7 +374,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.spawnVehicle(identifier, code);
-    await audit(client, request, `vehicule ${code} envoye a un survivant.`);
+    await audit(client, history, request, `vehicule ${code} envoye a un survivant.`);
     response.json({ ok: true, message: `Vehicule ${code} envoye.` });
   }));
 
@@ -314,7 +388,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await service.spawnAi(identifier, type, quantity, distance);
-    await audit(client, request, `${quantity} IA ${type} envoyee(s) pres d'un survivant.`);
+    await audit(client, history, request, `${quantity} IA ${type} envoyee(s) pres d'un survivant.`);
     response.json({ ok: true, message: "IA envoyee." });
   }));
 
@@ -329,7 +403,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     client.user.setPresence({ activities: [{ name: presence, type: ActivityType.Playing }], status: "online" });
-    await audit(client, request, "presence de R.A.D.A.R. mise a jour.");
+    await audit(client, history, request, "presence de R.A.D.A.R. mise a jour.");
     response.json({ ok: true, message: "Presence du bot mise a jour." });
   }));
 
@@ -339,7 +413,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     await deployCommands(client.user.id);
-    await audit(client, request, "commandes Discord synchronisees.");
+    await audit(client, history, request, "commandes Discord synchronisees.");
     response.json({ ok: true, message: "Commandes Discord synchronisees." });
   }));
 
@@ -351,7 +425,7 @@ export async function startDashboard({ client, service, monitor, deployCommands 
       return;
     }
     const output = await service.execute(command);
-    await audit(client, request, "commande RCON avancee executee.", 0xf9a825);
+    await audit(client, history, request, "commande RCON avancee executee.", 0xf9a825);
     response.json({ ok: true, output: sanitizeOutput(output) });
   }));
 
