@@ -123,7 +123,7 @@ function addHeaders(request, response, next) {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
-    "Content-Security-Policy": "default-src 'self' https://cdn.discordapp.com; img-src 'self' https://cdn.discordapp.com data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+    "Content-Security-Policy": "default-src 'self' https://cdn.discordapp.com; img-src 'self' https://cdn.discordapp.com https://humanitz.codexery.com data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
   });
   next();
 }
